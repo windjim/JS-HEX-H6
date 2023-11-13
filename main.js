@@ -12,7 +12,8 @@ let data = [];
 //     });
 //     renderData();
 //   });
-//第二種
+
+// 第二種
 axios
   .get(
     "https://raw.githubusercontent.com/hexschool/js-training/main/travelApi.json"
@@ -212,7 +213,7 @@ function renderData() {
     obj.id = idLength;
     obj.name = ticketName.value.trim();
     obj.imgUrl = ticketImgUrl.value.trim();
-    obj.area = ticketRegion.value.trim();
+    obj.area = ticketRegion.value;
     obj.description = ticketDescription.value.trim();
     obj.group = Number(ticketNum.value.trim());
     obj.price = Number(ticketPrice.value.trim());
