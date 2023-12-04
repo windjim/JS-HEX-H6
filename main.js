@@ -23,15 +23,18 @@ axios
       data.push(item);
     });
     renderData();
+  })
+  .catch((error) => {
+    console.log(error);
   });
 function renderData() {
   const areaData = [
-    "台北",
-    "新北",
-    "桃園",
-    "台中",
-    "臺南",
-    "高雄",
+    "臺北市",
+    "新北市",
+    "桃園市",
+    "臺中市",
+    "臺南市",
+    "高雄市",
     "新竹縣",
     "苗栗縣",
     "彰化縣",
@@ -77,10 +80,9 @@ function renderData() {
     ticketRegion.innerHTML = addStr;
   }
   areaOption();
-  // 初始化
-  function init() {
+  // 初始化、後續渲染
+  function init(data) {
     let str = "";
-    let searchLength = 0;
     data.forEach((item) => {
       str += ` <li class="ticketCard">
       <div class="ticketCard-img">
@@ -113,85 +115,70 @@ function renderData() {
         </div>
       </div>
     </li>`;
-      searchLength += 1;
     });
     list.innerHTML = str;
-    searchResult.innerHTML = `本次搜尋共 ${searchLength} 筆資料`;
+    searchResult.innerHTML = `本次搜尋共 ${data.length} 筆資料`;
   }
-  init();
+  init(data);
 
   // 搜尋相對縣市條件
+  function filterArea(hostCity) {
+    if (hostCity === "全部") {
+      return data;
+    } else {
+      const filterData = data.filter((item) => {
+        return item.area === hostCity;
+      });
+      return filterData;
+    }
+  }
+  //篩選地區監聽功能
   regionSearch.addEventListener("change", (e) => {
     const hostCity = e.target.value;
-    hostCity === "全部" ? init() : filterArea(hostCity);
-    function filterArea(hostCity) {
-      let str = "";
-      let searchLength = 0;
-      data.forEach((item) => {
-        if (item.area === hostCity) {
-          str += ` <li class="ticketCard">
-          <div class="ticketCard-img">
-            <a href="#">
-              <img
-                src="${item.imgUrl}"
-                alt=""
-              />
-            </a>
-            <div class="ticketCard-region">${item.area}</div>
-            <div class="ticketCard-rank">${item.rate}</div>
-          </div>
-          <div class="ticketCard-content">
-            <div>
-              <h3>
-                <a href="#" class="ticketCard-name">${item.name}</a>
-              </h3>
-              <p class="ticketCard-description">
-                ${item.description}
-              </p>
-            </div>
-            <div class="ticketCard-info">
-              <p class="ticketCard-num">
-                <span><i class="fas fa-exclamation-circle"></i></span>
-                剩下最後 <span id="ticketCard-num"> ${item.group}</span> 組
-              </p>
-              <p class="ticketCard-price">
-                TWD <span id="ticketCard-price">${item.price}</span>
-              </p>
-            </div>
-          </div>
-        </li>`;
-          searchLength += 1;
-        }
-      });
-      list.innerHTML = str;
-      str = `本次搜尋共 ${searchLength} 筆資料`;
-      searchLength === 0
-        ? (searchResult.innerHTML = str + `,找不到相關頁面`)
-        : (searchResult.innerHTML = str);
-    }
+    init(filterArea(hostCity));
   });
 
   // 判斷有沒有選項沒填寫或錯誤
   function alertStation(valueArr) {
-    let alertLength = 0;
+    let alertState = true;
     valueArr.forEach((item) => {
+      alertState = true;
       if (item.value.trim() === "") {
-        alertLength += 1;
+        item.parentElement.nextElementSibling.style.display = "flex";
+        alertState = false;
       }
       if (
         item === ticketRate &&
         (Number(item.value.trim()) > 10 || Number(item.value.trim()) < 1)
       ) {
-        alertLength += 1;
+        item.parentElement.nextElementSibling.style.display = "flex";
+        alertState = false;
+      }
+
+      if (alertState) {
+        item.parentElement.nextElementSibling.style.display = "none";
       }
     });
-    return alertLength;
+    return alertState;
+  }
+  //Data 增加物件
+  function addObj() {
+    const idLength = data.length;
+    let obj = {};
+    obj.id = idLength;
+    obj.name = ticketName.value;
+    obj.imgUrl = ticketImgUrl.value;
+    obj.area = ticketRegion.value;
+    obj.description = ticketDescription.value;
+    obj.group = Number(ticketNum.value);
+    obj.price = Number(ticketPrice.value);
+    obj.rate = Number(ticketRate.value);
+    return obj;
   }
   //套票資訊清除
-  function cleanData(valueArr) {
-    valueArr.forEach((item) => {
-      item.value = "";
-    });
+  function cleanData() {
+    const ticketForm = document.querySelector(".addTicket-form");
+    ticketForm.reset();
   }
   // 增加套票監聽
   addBtn.addEventListener("click", (e) => {
@@ -204,22 +191,11 @@ function renderData() {
       ticketPrice,
       ticketRate,
     ];
-    if (alertStation(valueArr) > 0) {
-      alert("請檢查每個選項是否填寫/正確");
-      return;
-    }
-    const idLength = data.length;
-    let obj = {};
-    obj.id = idLength;
-    obj.name = ticketName.value.trim();
-    obj.imgUrl = ticketImgUrl.value.trim();
-    obj.area = ticketRegion.value;
-    obj.description = ticketDescription.value.trim();
-    obj.group = Number(ticketNum.value.trim());
-    obj.price = Number(ticketPrice.value.trim());
-    obj.rate = Number(ticketRate.value.trim());
-    data.push(obj);
-    init();
-    cleanData(valueArr);
+    if (!alertStation(valueArr)) return;
+    data.push(addObj());
+    init(data);
+    //將地區搜尋回到預設值
+    regionSearch.selectedIndex = 0;
+    cleanData();
   });
 }
